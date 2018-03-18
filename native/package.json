@@ -7,12 +7,12 @@
     "build-autoprefix": "postcss --use autoprefixer --map false --output dist/css/main.css dist/css/main.css",
     "build-clean": "rimraf css",
     "build-sass": "node-sass --output-style expanded --source-map true src/main.sass dist/css/main.css",
-    "start": "concurrently --kill-others \"npm run gulp watch\" \"npm run build-sass -- --watch\"",
+    "start": "npm run build && concurrently --kill-others \"npm run gulp watch\" \"npm run build-sass -- --watch\"",
     "gulp": "gulp"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fourofour/Phantom.git"
+    "url": "git+https://ithub.com/fourofour/Phantom.git"
   },
   "keywords": [
     "javascript",
