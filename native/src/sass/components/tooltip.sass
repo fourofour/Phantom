@@ -16,3 +16,48 @@ $tooltip-text-color: #fff !default
     radius: $tooltip-border-radius
   position: $tooltip-position
   color: $tooltip-text-color
+
+  &:after
+    content: ''
+    display: block
+    position: absolute
+    border:
+      width: 0 3px 3px 0
+      color: black
+      style: solid
+    padding: 3px
+
+  &.top:after
+    transform: rotate(45deg)
+    -webkit-transform: rotate(45deg)
+    bottom: -3px
+    right: 50%
+    margin:
+      right: -3px
+
+  &.bottom:after
+    transform: rotate(-135deg)
+    -webkit-transform: rotate(-135deg)
+    top: -3px
+    right: 50%
+    margin:
+      right: -3px
+
+  &.left:after
+    transform: rotate(-45deg)
+    -webkit-transform: rotate(-45deg)
+    top: 50%
+    right: 0
+    margin:
+      top: -5px
+      right: -3px
+
+  &.right:after
+    transform: rotate(135deg)
+    -webkit-transform: rotate(135deg)
+    top: 50%
+    left: 0
+    margin:
+      top: -5px
+      left: -3px
+

@@ -1,14 +1,14 @@
 class Phantom  {
   constructor () {
-    //setting up access to the Phantom Object
+    //setting top access to the Phantom Object
     let that = this
     
     // Keep our global setting here
     this.__proto__._setting = {
-      debugMod: true
+      debugMod: false
     }
 
-    // Setting up our core which will be used in all different places such as in JS Native, jQuery and ...
+    // Setting top our core which will be used in all different places such as in JS Native, jQuery and ...
     this.__proto__._core = {
       // function to get elements position
       getPosition: function (el = null) {
@@ -125,7 +125,8 @@ class Phantom  {
               id,
               height,
               width,
-              location
+              location,
+              direction = 'top'
 
             height = item.clientHeight
             width = item.clientWidth
@@ -140,16 +141,38 @@ class Phantom  {
 
             position = that._core.getPosition(item)
 
-            location = {
-              top: position.top - height - 5 + 'px',
-              left: position.left + (width / 2) + 'px'
+            switch (direction) {
+              case 'left':
+                location = {
+                  top: position.top + (height / 2) - 15 + 'px',
+                  right: position.left + width + 7 + 'px'
+                }
+                break
+              case 'right':
+                location = {
+                  top: position.top + (height / 2) - 15 + 'px',
+                  left: position.left + width + 7 + 'px'
+                }
+                break
+              case 'bottom':
+                location = {
+                  top: position.top + height + 7 + 'px',
+                  left: position.left + (width / 2) + 'px'
+                }
+                break
+              default:
+                location = {
+                  top: position.top - height - 10 + 'px',
+                  left: position.left + (width / 2) + 'px'
+                }
+                break
             }
 
             tooltip = item.getAttribute('data-ph-tooltip')
             element = that._core.createElement({
-              classList: ['tooltip'],
+              classList: ['tooltip', direction],
               text: tooltip,
-              style: [{top: location.top}, {left: location.left}]
+              style: [{top: location.top}, {left: location.left}, {right: location.right}]
             })
 
             that._live.tooltip.set(id.toString(), element)
