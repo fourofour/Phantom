@@ -10,6 +10,7 @@ class Phantom  {
 
     // Setting top our core which will be used in all different places such as in JS Native, jQuery and ...
     this.__proto__._core = {
+      // import from https://gist.github.com/jlong/eff01958791d3e0bf10c with few modification
       getViewportOffset(element) {
         let node = element
         let left = node.offsetLeft,
@@ -20,7 +21,6 @@ class Phantom  {
         do {
           if (node.nodeName !== '#document') {
             let styles = getComputedStyle(node)
-
             let position = styles.getPropertyValue('position')
 
             left -= node.scrollLeft
