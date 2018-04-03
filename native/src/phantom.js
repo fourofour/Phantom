@@ -5,21 +5,44 @@ class Phantom  {
     
     // Keep our global setting here
     this.__proto__._setting = {
-      debugMod: false
+      debugMod: true
     }
 
     // Setting top our core which will be used in all different places such as in JS Native, jQuery and ...
     this.__proto__._core = {
-      // function to get elements position
-      getPosition: function (el = null) {
-        if (el === null)
-          return el
-        else
-          return {
-            top: el.offsetTop,
-            left: el.offsetLeft
+      getViewportOffset(element) {
+        let node = element
+        let left = node.offsetLeft,
+          top = node.offsetTop
+
+        node = node.parentNode
+
+        do {
+          if (node.nodeName !== '#document') {
+            let styles = getComputedStyle(node)
+
+            let position = styles.getPropertyValue('position')
+
+            left -= node.scrollLeft
+            top -= node.scrollTop
+
+            if (/relative|absolute|fixed/.test(position)) {
+              left += parseInt(styles.getPropertyValue('border-left-width'), 10)
+              top += parseInt(styles.getPropertyValue('border-top-width'), 10)
+
+              left += node.offsetLeft
+              top += node.offsetTop
+            }
+
+            node = position === 'fixed' ? null : node.parentNode
+          } else {
+            node = null
           }
+        } while (node)
+
+        return { left: left, top: top };
       },
+
       // function to make elements fast
       createElement: function ({ type = 'DIV', classList = [], children = [], text = '', style = [], attributes = [], attr = attributes }) {
         let element = document.createElement(type)
@@ -139,7 +162,7 @@ class Phantom  {
               item.setAttribute('data-ph-id', id)
             }
 
-            position = that._core.getPosition(item)
+            position = that._core.getViewportOffset(item)
 
             switch (direction) {
               case 'left':
@@ -169,6 +192,7 @@ class Phantom  {
             }
 
             tooltip = item.getAttribute('data-ph-tooltip')
+
             element = that._core.createElement({
               classList: ['tooltip', direction],
               text: tooltip,
@@ -196,7 +220,9 @@ class Phantom  {
 
     this._core.init.add('tooltip', that._native.tooltip)
 
-    this._core.init.run()
+    document.addEventListener('DOMContentLoaded', function (event) {
+      that._core.init.run()
+    })
   }
 
 }
