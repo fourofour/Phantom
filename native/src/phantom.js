@@ -55,7 +55,33 @@ class Phantom  {
         else
           classList.push(className)
 
-        element.className = className.join(' ')
+        element.className = classList.join(' ')
+      },
+
+      // Function to add class to one element
+      addClass: function ({ className, element }) {
+        let classList = element.className.split(' '),
+          index
+
+        index = classList.indexOf(className)
+
+        if (index === -1 )
+          classList.push(className)
+
+        element.className = classList.join(' ')
+      },
+
+      // Function to remove class to one element
+      removeClass: function ({ className, element }) {
+        let classList = element.className.split(' '),
+          index
+
+        index = classList.indexOf(className)
+
+        if (index > -1 )
+          classList.splice(index, 1)
+
+        element.className = classList.join(' ')
       },
 
       // Function to make elements fast
@@ -235,6 +261,14 @@ class Phantom  {
             that._live.tooltip.delete(id)
           }, false)
         }
+      },
+
+      /*
+      * Carousel is function to manage some adding and removing class by timer
+      *
+      * */
+      carousel: function (querySelector) {
+
       }
     }
 
