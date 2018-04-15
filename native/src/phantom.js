@@ -43,6 +43,21 @@ class Phantom  {
         return { left: left, top: top }
       },
 
+      // Function for toggle class on one element
+      toggle: function ({ className, element }) {
+        let classList = element.className.split(' '),
+          index
+
+        index = classList.indexOf(className)
+
+        if ( index > -1 )
+          classList.splice(index, 1)
+        else
+          classList.push(className)
+
+        element.className = className.join(' ')
+      },
+
       // Function to make elements fast
       createElement: function ({ type = 'DIV', classList = [], children = [], text = '', style = [], attributes = [], attr = attributes }) {
         let element = document.createElement(type)
@@ -223,13 +238,17 @@ class Phantom  {
       }
     }
 
+    /*
+    * Basically export is for add direct property or prototype to main phantom object for easy access to its callback
+    *
+    * */
     this.__proto__._export = {
       list: new Map(),
       register: function ({ name, callback }) {
         that._export.list.set(name, callback)
       },
       remove: function ({ name }) {
-        that._export.list.remove[name]
+        that._export.list.delete(name)
       },
       attach: function ({ name }) {
         that[name] = that._export.list.get(name)
@@ -250,7 +269,7 @@ class Phantom  {
     }
 
     /*
-    * Adding our export section to the core init to run it when page is loaded ( attach all )
+    * Adding our export section to the _core init to run it when page is loaded ( attach all )
     *
     * */
     this._core.init.add({
@@ -260,7 +279,7 @@ class Phantom  {
 
     /*
     * Registering our tooltip in _live
-    * Adding tooltip to core so it can run when page is loaded once
+    * Adding tooltip to _core so it can run when page is loaded once
     * Registering tooltip to _export so we can have easy access to it
     *
     * */
@@ -275,6 +294,10 @@ class Phantom  {
       callback:  that._native.tooltip
     })
 
+    /*
+    * Attaching out _core to lunch when page is loaded
+    *
+    * */
     document.addEventListener('DOMContentLoaded', function (event) {
       that._core.init.run()
     })
