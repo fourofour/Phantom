@@ -1,6 +1,6 @@
 class Phantom  {
   constructor () {
-    //setting top access to the Phantom Object
+    // Setting top access to the Phantom Object
     let that = this
     
     // Keep our global setting here
@@ -10,7 +10,7 @@ class Phantom  {
 
     // Setting top our core which will be used in all different places such as in JS Native, jQuery and ...
     this.__proto__._core = {
-      // import from https://gist.github.com/jlong/eff01958791d3e0bf10c with few modification
+      // Imported from https://gist.github.com/jlong/eff01958791d3e0bf10c with few modification
       getViewportOffset(element) {
         let node = element
         let left = node.offsetLeft,
@@ -40,49 +40,47 @@ class Phantom  {
           }
         } while (node)
 
-        return { left: left, top: top };
+        return { left: left, top: top }
       },
 
-      // function to make elements fast
+      // Function to make elements fast
       createElement: function ({ type = 'DIV', classList = [], children = [], text = '', style = [], attributes = [], attr = attributes }) {
         let element = document.createElement(type)
 
-        // add Class list
+        // Add class list
         if (classList.length > 0)
           element.className = classList.join(' ')
 
-        // appending children
+        // Appending children
         if (children.length > 0)
           children.forEach(function (item, index, array) {
             element.appendChild(item)
           })
         else
-        // or appending the text node
+        // Or appending the text node
         if (text.length > 0)
           element.appendChild(document.createTextNode(text))
 
-        // adding inline styles
-        if (style.length > 0) {
+        // Adding inline styles
+        if (style.length > 0)
           style.forEach(function (value, index, array) {
             let key = Object.keys(value)[0]
 
             element.style[key] = value[key]
           })
-        }
 
-        //adding custom attributes
-        if (attr.length > 0) {
+        // Adding custom attributes
+        if (attr.length > 0)
           attr.forEach(function (value, index, array) {
             let key = Object.keys(value)[0]
 
             element.setAttribute(key, value[key])
           })
-        }
 
         return element
       },
       init: {
-        add: function (name, callback) {
+        add: function ({ name, callback }) {
           if (name === undefined || callback === undefined || this.list.has(name))
             return null
           else
@@ -120,14 +118,21 @@ class Phantom  {
         },
         current: 0
       },
-      tooltip: new Map()
+      register: function (nameSpace) {
+        that._live[nameSpace] = new Map()
+      },
+      remove: function (nameSpace) {
+        delete that._live[nameSpace]
+      }
     }
 
     this.__proto__._native = {
       /*
       * Tooltip
       *
-      *   you can access it by adding following attribute [data-ph-tooltip]
+      *   you can access it by adding following attribute [data-ph-tooltip] for the tooltip text and
+      *   [data-ph-pos] = [top|bottom|right|left|undefined] for tooltip location
+      *
       * */
       tooltip: function (querySelector) {
         let list
@@ -149,7 +154,7 @@ class Phantom  {
               height,
               width,
               location,
-              direction = 'top'
+              direction = item.getAttribute('data-ph-pos') ?  item.getAttribute('data-ph-pos') : 'top'
 
             height = item.clientHeight
             width = item.clientWidth
@@ -167,13 +172,13 @@ class Phantom  {
             switch (direction) {
               case 'left':
                 location = {
-                  top: position.top + (height / 2) - 15 + 'px',
+                  top: position.top + (height / 2) - 10 + 'px',
                   right: position.left + width + 7 + 'px'
                 }
                 break
               case 'right':
                 location = {
-                  top: position.top + (height / 2) - 15 + 'px',
+                  top: position.top + (height / 2) - 10 + 'px',
                   left: position.left + width + 7 + 'px'
                 }
                 break
@@ -218,14 +223,62 @@ class Phantom  {
       }
     }
 
-    this._core.init.add('tooltip', that._native.tooltip)
+    this.__proto__._export = {
+      list: new Map(),
+      register: function ({ name, callback }) {
+        that._export.list.set(name, callback)
+      },
+      remove: function ({ name }) {
+        that._export.list.remove[name]
+      },
+      attach: function ({ name }) {
+        that[name] = that._export.list.get(name)
+      },
+      detach: function ({ name }) {
+        delete that[name]
+      },
+      attachAll: function () {
+        that._export.list.forEach(function (value, key, map) {
+          that._export.attach({ name: key })
+        })
+      },
+      detachAll: function () {
+        that._export.list.forEach(function (value, key, map) {
+          that._export.detach({ name: key })
+        })
+      }
+    }
+
+    /*
+    * Adding our export section to the core init to run it when page is loaded ( attach all )
+    *
+    * */
+    this._core.init.add({
+      name: '_export',
+      callback: that._export.attachAll
+    })
+
+    /*
+    * Registering our tooltip in _live
+    * Adding tooltip to core so it can run when page is loaded once
+    * Registering tooltip to _export so we can have easy access to it
+    *
+    * */
+
+    this._live.register('tooltip')
+    this._core.init.add({
+      name: 'tooltip',
+      callback:  that._native.tooltip
+    })
+    this._export.register({
+      name: 'tooltip',
+      callback:  that._native.tooltip
+    })
 
     document.addEventListener('DOMContentLoaded', function (event) {
       that._core.init.run()
     })
   }
-
 }
 
-let phantom = new Phantom()
-
+let ph = new Phantom()
