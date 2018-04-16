@@ -300,6 +300,7 @@ class Phantom  {
             timeInterval,
             timeout: null,
             cleaner: function () {
+              clearInterval(carousel.timer)
               clearTimeout(carousel.timeout)
               for (let i = 0; i < carousel.slides.length; i++ )
                 if (carousel.slides[i].className.split(' ').indexOf('prev') > -1)
@@ -313,9 +314,12 @@ class Phantom  {
                       className: 'next',
                       element: carousel.slides[i]
                     })
+
+              carousel.timer = setInterval(function () {
+                carousel.nextSlide()
+              }, carousel.timeInterval)
             },
             switchWithIndicator: function ({ event, index, callback }) {
-              clearInterval(carousel.timer)
               carousel.cleaner()
 
               let activeIndex = 0
