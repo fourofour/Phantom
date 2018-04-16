@@ -268,7 +268,85 @@ class Phantom  {
       *
       * */
       carousel: function (querySelector) {
+        let list
 
+        if (querySelector === undefined) {
+          list = document.querySelectorAll('[data-ph-carousel]')
+        } else {
+          list = document.querySelectorAll(querySelector)
+        }
+
+        for (let i = 0; i < list.length; i++) {
+          let item = list[i]
+
+          let timeIntterval = item.getAttribute('data-ph-carousel'),
+            id = item.getAttribute('data-ph-id')
+
+          timeIntterval = timeIntterval ? parseInt(timeIntterval) : 5000
+          id = id ? id : that._live.id.get()
+
+          if (!item.hasAttribute('data-ph-id'))
+            item.setAttribute('data-ph-id', id)
+
+          let carousel = {
+            indicators: item.querySelectorAll('.carousel.indicator'),
+            slides: item.querySelectorAll('.carousel.slide'),
+            next: item.querySelector('.carousel.next'),
+            prev: item.querySelector('.carousel.prev'),
+            id,
+            timer: setInterval(function () {
+              if (carousel.slides.length > 1) {
+                let index = 0,
+                  next = 1
+
+                for (let i = 0; i < carousel.slides.length; i++) {
+                  let classList = carousel.slides[i].className.split(' ')
+
+                  if (classList.indexOf('active') > -1) {
+                    index = i
+                  }
+                }
+
+                if (index === carousel.slides.length - 1)
+                  next = 0
+                else
+                  next = index + 1
+
+                that._core.addClass({
+                  className: 'prev',
+                  element: carousel.slides[index]
+                })
+                that._core.addClass({
+                  className: 'next',
+                  element: carousel.slides[next]
+                })
+                let timeout = setTimeout(function () {
+                  that._core.removeClass({
+                    className: 'prev',
+                    element: carousel.slides[index]
+                  })
+                  that._core.removeClass({
+                    className: 'active',
+                    element: carousel.slides[index]
+                  })
+
+                  that._core.removeClass({
+                    className: 'next',
+                    element: carousel.slides[next]
+                  })
+                  that._core.addClass({
+                    className: 'active',
+                    element: carousel.slides[next]
+                  })
+                }, 1000)
+              }
+
+              console.log('fuck')
+            }, timeIntterval)
+          }
+
+          that._live.carousel.set(id, carousel)
+        }
       }
     }
 
@@ -326,6 +404,23 @@ class Phantom  {
     this._export.register({
       name: 'tooltip',
       callback:  that._native.tooltip
+    })
+
+    /*
+    * Registering our carousel in _live
+    * Adding carousel to _core so it can run when page is loaded once
+    * Registering carousel to _export so we can have easy access to it
+    *
+    * */
+
+    this._live.register('carousel')
+    this._core.init.add({
+      name: 'carousel',
+      callback:  that._native.carousel
+    })
+    this._export.register({
+      name: 'carousel',
+      callback:  that._native.carousel
     })
 
     /*
