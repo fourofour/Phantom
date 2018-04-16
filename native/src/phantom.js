@@ -294,7 +294,67 @@ class Phantom  {
             next: item.querySelector('.carousel.next'),
             prev: item.querySelector('.carousel.prev'),
             timeInterval,
-            nextSlide: function (callback) {
+            timeout: null,
+            switchWithIndicator: function ({ event, index }) {
+              clearInterval(carousel.timer)
+              clearTimeout(carousel.timeout)
+
+              let activeIndex = 0
+
+              for (let i = 0; i < carousel.slides.length; i++) {
+                let classList = carousel.slides[i].className.split(' ')
+
+                if (classList.indexOf('active') > -1) {
+                  activeIndex = i
+                }
+              }
+
+              that._core.addClass({
+                className: 'prev',
+                element: carousel.slides[activeIndex]
+              })
+              that._core.addClass({
+                className: 'next',
+                element: carousel.slides[index]
+              })
+
+              carousel.timeout = setTimeout(function () {
+                that._core.removeClass({
+                  className: 'prev',
+                  element: carousel.slides[activeIndex]
+                })
+                that._core.removeClass({
+                  className: 'active',
+                  element: carousel.slides[activeIndex]
+                })
+
+                that._core.removeClass({
+                  className: 'next',
+                  element: carousel.slides[index]
+                })
+                that._core.addClass({
+                  className: 'active',
+                  element: carousel.slides[index]
+                })
+
+                that._core.removeClass({
+                  className: 'active',
+                  element: carousel.indicators[activeIndex]
+                })
+
+                that._core.addClass({
+                  className: 'active',
+                  element: carousel.indicators[index]
+                })
+
+                carousel.timer = setInterval(function () {
+                  carousel.nextSlide()
+                }, carousel.timeInterval)
+              }, 1000)
+            },
+            nextSlide: function ({ callback } = {}) {
+              clearTimeout(carousel.timeout)
+
               if (carousel.slides.length > 1) {
                 let index = 0,
                   next = 1
@@ -321,7 +381,7 @@ class Phantom  {
                   element: carousel.slides[next]
                 })
 
-                let timeout = setTimeout(function () {
+                carousel.timeout = setTimeout(function () {
                   that._core.removeClass({
                     className: 'prev',
                     element: carousel.slides[index]
@@ -355,7 +415,9 @@ class Phantom  {
                 }, 1000)
               }
             },
-            prevSlide: function (callback) {
+            prevSlide: function ({ callback } = {}) {
+              clearTimeout(carousel.timeout)
+
               if (carousel.slides.length > 1) {
                 let index = 0,
                   next = carousel.slides.length
@@ -382,7 +444,7 @@ class Phantom  {
                   element: carousel.slides[next]
                 })
 
-                let timeout = setTimeout(function () {
+                carousel.timeout = setTimeout(function () {
                   that._core.removeClass({
                     className: 'prev',
                     element: carousel.slides[index]
@@ -427,10 +489,12 @@ class Phantom  {
 
             clearInterval(carousel.timer)
 
-            carousel.nextSlide(function () {
-              carousel.timer = setInterval(function () {
-                carousel.nextSlide()
-              }, carousel.timeInterval)
+            carousel.nextSlide({
+              callback: function () {
+                carousel.timer = setInterval(function () {
+                  carousel.nextSlide()
+                }, carousel.timeInterval)
+              }
             })
           })
           
@@ -439,12 +503,24 @@ class Phantom  {
             
             clearInterval(carousel.timer)
             
-            carousel.prevSlide(function () {
-              carousel.timer = setInterval(function () {
-                carousel.nextSlide()
-              }, carousel.timeInterval)
-            })            
+            carousel.prevSlide({
+              callback: function () {
+                carousel.timer = setInterval(function () {
+                  carousel.nextSlide()
+                }, carousel.timeInterval)
+              }
+            })
           })
+
+          for (let i = 0; i < carousel.indicators.length; i++) {
+            carousel.indicators[i].addEventListener('click', function (event) {
+              let index = i
+              carousel.switchWithIndicator({
+                event,
+                index
+              })
+            }, false)
+          }
           
           that._live.carousel.set(id, carousel)
         }
