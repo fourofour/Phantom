@@ -288,6 +288,10 @@ class Phantom  {
           if (!item.hasAttribute('data-ph-id'))
             item.setAttribute('data-ph-id', id)
 
+          /*
+          * We build a carousel object here and store it in _live so we can have access to it later with full functionality
+          *
+          * */
           let carousel = {
             indicators: item.querySelectorAll('.carousel.indicator'),
             slides: item.querySelectorAll('.carousel.slide'),
@@ -295,9 +299,24 @@ class Phantom  {
             prev: item.querySelector('.carousel.prev'),
             timeInterval,
             timeout: null,
-            switchWithIndicator: function ({ event, index }) {
-              clearInterval(carousel.timer)
+            cleaner: function () {
               clearTimeout(carousel.timeout)
+              for (let i = 0; i < carousel.slides.length; i++ )
+                if (carousel.slides[i].className.split(' ').indexOf('prev') > -1)
+                  that._core.removeClass({
+                    className: 'prev',
+                    element: carousel.slides[i]
+                  })
+                else
+                  if (carousel.slides[i].className.split(' ').indexOf('next') > -1)
+                    that._core.removeClass({
+                      className: 'next',
+                      element: carousel.slides[i]
+                    })
+            },
+            switchWithIndicator: function ({ event, index, callback }) {
+              clearInterval(carousel.timer)
+              carousel.cleaner()
 
               let activeIndex = 0
 
@@ -350,10 +369,13 @@ class Phantom  {
                 carousel.timer = setInterval(function () {
                   carousel.nextSlide()
                 }, carousel.timeInterval)
+
+                if (callback)
+                  callback()
               }, 1000)
             },
             nextSlide: function ({ callback } = {}) {
-              clearTimeout(carousel.timeout)
+              carousel.cleaner()
 
               if (carousel.slides.length > 1) {
                 let index = 0,
@@ -416,7 +438,7 @@ class Phantom  {
               }
             },
             prevSlide: function ({ callback } = {}) {
-              clearTimeout(carousel.timeout)
+              carousel.cleaner()
 
               if (carousel.slides.length > 1) {
                 let index = 0,
