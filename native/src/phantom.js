@@ -302,6 +302,7 @@ class Phantom  {
             cleaner: function () {
               clearInterval(carousel.timer)
               clearTimeout(carousel.timeout)
+
               for (let i = 0; i < carousel.slides.length; i++ )
                 if (carousel.slides[i].className.split(' ').indexOf('prev') > -1)
                   that._core.removeClass({
@@ -314,10 +315,6 @@ class Phantom  {
                       className: 'next',
                       element: carousel.slides[i]
                     })
-
-              carousel.timer = setInterval(function () {
-                carousel.nextSlide()
-              }, carousel.timeInterval)
             },
             switchWithIndicator: function ({ event, index, callback }) {
               carousel.cleaner()
@@ -370,9 +367,7 @@ class Phantom  {
                   element: carousel.indicators[index]
                 })
 
-                carousel.timer = setInterval(function () {
-                  carousel.nextSlide()
-                }, carousel.timeInterval)
+                carousel.setTimer()
 
                 if (callback)
                   callback()
@@ -435,6 +430,8 @@ class Phantom  {
                     className: 'active',
                     element: carousel.indicators[next]
                   })
+
+                  carousel.setTimer()
 
                   if (callback)
                     callback()
@@ -499,43 +496,34 @@ class Phantom  {
                     element: carousel.indicators[next]
                   })
 
+                  carousel.setTimer()
+
                   if (callback)
                     callback()
                 }, 1000)
               }
             },
             id,
-            timer: setInterval(function () {
-              carousel.nextSlide()
-            }, timeInterval)
+            timer: null,
+            setTimer: function () {
+              carousel.timer = setInterval(function () {
+                carousel.nextSlide()
+              }, timeInterval)
+            }
           }
+
+          carousel.setTimer()
 
           carousel.next.addEventListener('click', function (event) {
             event.preventDefault()
 
-            clearInterval(carousel.timer)
-
-            carousel.nextSlide({
-              callback: function () {
-                carousel.timer = setInterval(function () {
-                  carousel.nextSlide()
-                }, carousel.timeInterval)
-              }
-            })
+            carousel.nextSlide()
           })
           
           carousel.prev.addEventListener('click', function (event) {
             event.preventDefault()
-            
-            clearInterval(carousel.timer)
-            
-            carousel.prevSlide({
-              callback: function () {
-                carousel.timer = setInterval(function () {
-                  carousel.nextSlide()
-                }, carousel.timeInterval)
-              }
-            })
+
+            carousel.prevSlide()
           })
 
           for (let i = 0; i < carousel.indicators.length; i++) {
@@ -547,8 +535,8 @@ class Phantom  {
               })
             }, false)
           }
-          
-          that._live.carousel.set(id, carousel)
+
+          // that._live.carousel.set(id, carousel)
         }
       }
     }
