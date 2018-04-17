@@ -597,6 +597,35 @@ class Phantom  {
               })
           })
         }
+      },
+
+      /*
+      * Modal also is toggling a class on the modal target
+      *
+      * */
+      modal: function (querySelector) {
+        let list
+
+        if (querySelector === undefined)
+          list = document.querySelectorAll('[data-ph-dropdown]')
+        else
+          list = document.querySelectorAll(querySelector)
+
+        for (let i = 0; i < list.length; i++) {
+          let item = list[i],
+            target
+
+          item.addEventListener('click', function (event) {
+            event.preventDefault()
+
+            target = document.querySelector(item.getAttribute('data-ph-target'))
+
+            that._core.toggle({
+              className: 'open',
+              element: target
+            })
+          })
+        }
       }
     }
 
@@ -686,6 +715,21 @@ class Phantom  {
     this._export.register({
       name: 'dropdown',
       callback:  that._native.dropdown
+    })
+
+    /*
+    * Adding modal to _core so it can run when page is loaded once
+    * Registering modal to _export so we can have easy access to it
+    *
+    * */
+
+    this._core.init.add({
+      name: 'modal',
+      callback:  that._native.modal
+    })
+    this._export.register({
+      name: 'modal',
+      callback:  that._native.modal
     })
 
     /*
