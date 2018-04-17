@@ -43,10 +43,26 @@ class Phantom  {
         return { left: left, top: top }
       },
 
+      // Function to get element class list by array
+      getClassArray: function ({ element }) {
+        let classList
+
+        if (element.className.length === 0)
+          classList = []
+        else
+          classList = element.className.split(' ')
+
+        return classList
+      },
+
       // Function for toggle class on one element
       toggle: function ({ className, element }) {
-        let classList = element.className.split(' '),
+        let classList,
           index
+
+        classList = that._core.getClassArray({
+          element
+        })
 
         index = classList.indexOf(className)
 
@@ -60,8 +76,12 @@ class Phantom  {
 
       // Function to add class to one element
       addClass: function ({ className, element }) {
-        let classList = element.className.split(' '),
+        let classList,
           index
+
+        classList = that._core.getClassArray({
+          element
+        })
 
         index = classList.indexOf(className)
 
@@ -73,8 +93,12 @@ class Phantom  {
 
       // Function to remove class to one element
       removeClass: function ({ className, element }) {
-        let classList = element.className.split(' '),
+        let classList,
           index
+
+        classList = that._core.getClassArray({
+          element
+        })
 
         index = classList.indexOf(className)
 
@@ -270,11 +294,10 @@ class Phantom  {
       carousel: function (querySelector) {
         let list
 
-        if (querySelector === undefined) {
+        if (querySelector === undefined)
           list = document.querySelectorAll('[data-ph-carousel]')
-        } else {
+        else
           list = document.querySelectorAll(querySelector)
-        }
 
         for (let i = 0; i < list.length; i++) {
           let item = list[i]
@@ -529,6 +552,7 @@ class Phantom  {
           for (let i = 0; i < carousel.indicators.length; i++) {
             carousel.indicators[i].addEventListener('click', function (event) {
               let index = i
+
               carousel.switchWithIndicator({
                 event,
                 index
@@ -536,7 +560,42 @@ class Phantom  {
             }, false)
           }
 
-          // that._live.carousel.set(id, carousel)
+          that._live.carousel.set(id, carousel)
+        }
+      },
+
+      /*
+      * Dropdown is just a toggle class
+      *
+      * */
+      dropdown: function (querySelector) {
+        let list
+
+        if (querySelector === undefined)
+          list = document.querySelectorAll('[data-ph-dropdown]')
+        else
+          list = document.querySelectorAll(querySelector)
+
+        for (let i = 0; i < list.length; i++) {
+          let item = list[i],
+            target
+
+          item.addEventListener('click', function (event) {
+            event.preventDefault()
+
+            target = item.getAttribute('data-ph-dropdown')
+
+            if (target !== null && target.length > 0)
+              that._core.toggle({
+                className: 'open',
+                element: document.querySelector(target)
+              })
+            else
+              that._core.toggle({
+                className: 'open',
+                element: item
+              })
+          })
         }
       }
     }
@@ -612,6 +671,21 @@ class Phantom  {
     this._export.register({
       name: 'carousel',
       callback:  that._native.carousel
+    })
+
+    /*
+    * Adding dropdown to _core so it can run when page is loaded once
+    * Registering dropdown to _export so we can have easy access to it
+    *
+    * */
+
+    this._core.init.add({
+      name: 'dropdown',
+      callback:  that._native.dropdown
+    })
+    this._export.register({
+      name: 'dropdown',
+      callback:  that._native.dropdown
     })
 
     /*
