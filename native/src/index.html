@@ -15,7 +15,32 @@
   <div data-ph-tooltip="tooltip right" style="margin: 100px; background-color: red" data-ph-pos="right">tooltip right</div>
   <div data-ph-tooltip="tooltip left" style="margin: 100px; background-color: red" data-ph-pos="left">tooltip left</div>
 
-  <script type="text/javascript" src="../dist/phantom.js"></script>
+  <div data-ph-carousel class="carousel self">
+    <div class="carousel inner">
+      <div class="carousel slide active">slide 1</div>
+      <div class="carousel slide">slide 2</div>
+      <div class="carousel slide">slide 3</div>
+      <div class="carousel slide">slide 4</div>
+
+      <div class="carousel controls">
+        <div class="carousel next">next</div>
+        <div class="carousel prev">prev</div>
+      </div>
+
+      <div class="carousel indicators">
+        <div class="carousel indicator active">1</div>
+        <div class="carousel indicator">2</div>
+        <div class="carousel indicator">3</div>
+        <div class="carousel indicator">4</div>
+      </div>
+    </div>
+  </div>
+
+  <div data-ph-dropdown>i am drop down with no target</div>
+  <div data-ph-dropdown="#dropdown">i am a drop down with target</div>
+  <div id="dropdown">i am drop down target</div>
+
+  <script type="text/javascript" src="../dist/phantom.2.js"></script>
   <!--<script type="text/javascript" src="phantom.js"></script>-->
 
 </body>

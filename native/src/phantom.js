@@ -43,10 +43,26 @@ class Phantom  {
         return { left: left, top: top }
       },
 
+      // Function to get element class list by array
+      getClassArray: function ({ element }) {
+        let classList
+
+        if (element.className.length === 0)
+          classList = []
+        else
+          classList = element.className.split(' ')
+
+        return classList
+      },
+
       // Function for toggle class on one element
       toggle: function ({ className, element }) {
-        let classList = element.className.split(' '),
+        let classList,
           index
+
+        classList = that._core.getClassArray({
+          element
+        })
 
         index = classList.indexOf(className)
 
@@ -55,7 +71,41 @@ class Phantom  {
         else
           classList.push(className)
 
-        element.className = className.join(' ')
+        element.className = classList.join(' ')
+      },
+
+      // Function to add class to one element
+      addClass: function ({ className, element }) {
+        let classList,
+          index
+
+        classList = that._core.getClassArray({
+          element
+        })
+
+        index = classList.indexOf(className)
+
+        if (index === -1 )
+          classList.push(className)
+
+        element.className = classList.join(' ')
+      },
+
+      // Function to remove class to one element
+      removeClass: function ({ className, element }) {
+        let classList,
+          index
+
+        classList = that._core.getClassArray({
+          element
+        })
+
+        index = classList.indexOf(className)
+
+        if (index > -1 )
+          classList.splice(index, 1)
+
+        element.className = classList.join(' ')
       },
 
       // Function to make elements fast
@@ -235,6 +285,347 @@ class Phantom  {
             that._live.tooltip.delete(id)
           }, false)
         }
+      },
+
+      /*
+      * Carousel is function to manage some adding and removing class by timer
+      *
+      * */
+      carousel: function (querySelector) {
+        let list
+
+        if (querySelector === undefined)
+          list = document.querySelectorAll('[data-ph-carousel]')
+        else
+          list = document.querySelectorAll(querySelector)
+
+        for (let i = 0; i < list.length; i++) {
+          let item = list[i]
+
+          let timeInterval = item.getAttribute('data-ph-carousel'),
+            id = item.getAttribute('data-ph-id')
+
+          timeInterval = timeInterval ? parseInt(timeInterval) : 5000
+          id = id ? id : that._live.id.get()
+
+          if (!item.hasAttribute('data-ph-id'))
+            item.setAttribute('data-ph-id', id)
+
+          /*
+          * We build a carousel object here and store it in _live so we can have access to it later with full functionality
+          *
+          * */
+          let carousel = {
+            indicators: item.querySelectorAll('.carousel.indicator'),
+            slides: item.querySelectorAll('.carousel.slide'),
+            next: item.querySelector('.carousel.next'),
+            prev: item.querySelector('.carousel.prev'),
+            timeInterval,
+            timeout: null,
+            cleaner: function () {
+              clearInterval(carousel.timer)
+              clearTimeout(carousel.timeout)
+
+              for (let i = 0; i < carousel.slides.length; i++ )
+                if (carousel.slides[i].className.split(' ').indexOf('prev') > -1)
+                  that._core.removeClass({
+                    className: 'prev',
+                    element: carousel.slides[i]
+                  })
+                else
+                  if (carousel.slides[i].className.split(' ').indexOf('next') > -1)
+                    that._core.removeClass({
+                      className: 'next',
+                      element: carousel.slides[i]
+                    })
+            },
+            switchWithIndicator: function ({ event, index, callback }) {
+              carousel.cleaner()
+
+              let activeIndex = 0
+
+              for (let i = 0; i < carousel.slides.length; i++) {
+                let classList = carousel.slides[i].className.split(' ')
+
+                if (classList.indexOf('active') > -1) {
+                  activeIndex = i
+                }
+              }
+
+              that._core.addClass({
+                className: 'prev',
+                element: carousel.slides[activeIndex]
+              })
+              that._core.addClass({
+                className: 'next',
+                element: carousel.slides[index]
+              })
+
+              carousel.timeout = setTimeout(function () {
+                that._core.removeClass({
+                  className: 'prev',
+                  element: carousel.slides[activeIndex]
+                })
+                that._core.removeClass({
+                  className: 'active',
+                  element: carousel.slides[activeIndex]
+                })
+
+                that._core.removeClass({
+                  className: 'next',
+                  element: carousel.slides[index]
+                })
+                that._core.addClass({
+                  className: 'active',
+                  element: carousel.slides[index]
+                })
+
+                that._core.removeClass({
+                  className: 'active',
+                  element: carousel.indicators[activeIndex]
+                })
+
+                that._core.addClass({
+                  className: 'active',
+                  element: carousel.indicators[index]
+                })
+
+                carousel.setTimer()
+
+                if (callback)
+                  callback()
+              }, 1000)
+            },
+            nextSlide: function ({ callback } = {}) {
+              carousel.cleaner()
+
+              if (carousel.slides.length > 1) {
+                let index = 0,
+                  next = 1
+
+                for (let i = 0; i < carousel.slides.length; i++) {
+                  let classList = carousel.slides[i].className.split(' ')
+
+                  if (classList.indexOf('active') > -1) {
+                    index = i
+                  }
+                }
+
+                if (index === carousel.slides.length - 1)
+                  next = 0
+                else
+                  next = index + 1
+
+                that._core.addClass({
+                  className: 'prev',
+                  element: carousel.slides[index]
+                })
+                that._core.addClass({
+                  className: 'next',
+                  element: carousel.slides[next]
+                })
+
+                carousel.timeout = setTimeout(function () {
+                  that._core.removeClass({
+                    className: 'prev',
+                    element: carousel.slides[index]
+                  })
+                  that._core.removeClass({
+                    className: 'active',
+                    element: carousel.slides[index]
+                  })
+
+                  that._core.removeClass({
+                    className: 'next',
+                    element: carousel.slides[next]
+                  })
+                  that._core.addClass({
+                    className: 'active',
+                    element: carousel.slides[next]
+                  })
+
+                  that._core.removeClass({
+                    className: 'active',
+                    element: carousel.indicators[index]
+                  })
+
+                  that._core.addClass({
+                    className: 'active',
+                    element: carousel.indicators[next]
+                  })
+
+                  carousel.setTimer()
+
+                  if (callback)
+                    callback()
+                }, 1000)
+              }
+            },
+            prevSlide: function ({ callback } = {}) {
+              carousel.cleaner()
+
+              if (carousel.slides.length > 1) {
+                let index = 0,
+                  next = carousel.slides.length
+
+                for (let i = 0; i < carousel.slides.length; i++) {
+                  let classList = carousel.slides[i].className.split(' ')
+
+                  if (classList.indexOf('active') > -1) {
+                    index = i
+                  }
+                }
+
+                if (index === 0)
+                  next = carousel.slides.length - 1
+                else
+                  next = index - 1
+
+                that._core.addClass({
+                  className: 'prev',
+                  element: carousel.slides[index]
+                })
+                that._core.addClass({
+                  className: 'next',
+                  element: carousel.slides[next]
+                })
+
+                carousel.timeout = setTimeout(function () {
+                  that._core.removeClass({
+                    className: 'prev',
+                    element: carousel.slides[index]
+                  })
+                  that._core.removeClass({
+                    className: 'active',
+                    element: carousel.slides[index]
+                  })
+
+                  that._core.removeClass({
+                    className: 'next',
+                    element: carousel.slides[next]
+                  })
+                  that._core.addClass({
+                    className: 'active',
+                    element: carousel.slides[next]
+                  })
+
+                  that._core.removeClass({
+                    className: 'active',
+                    element: carousel.indicators[index]
+                  })
+
+                  that._core.addClass({
+                    className: 'active',
+                    element: carousel.indicators[next]
+                  })
+
+                  carousel.setTimer()
+
+                  if (callback)
+                    callback()
+                }, 1000)
+              }
+            },
+            id,
+            timer: null,
+            setTimer: function () {
+              carousel.timer = setInterval(function () {
+                carousel.nextSlide()
+              }, timeInterval)
+            }
+          }
+
+          carousel.setTimer()
+
+          carousel.next.addEventListener('click', function (event) {
+            event.preventDefault()
+
+            carousel.nextSlide()
+          })
+          
+          carousel.prev.addEventListener('click', function (event) {
+            event.preventDefault()
+
+            carousel.prevSlide()
+          })
+
+          for (let i = 0; i < carousel.indicators.length; i++) {
+            carousel.indicators[i].addEventListener('click', function (event) {
+              let index = i
+
+              carousel.switchWithIndicator({
+                event,
+                index
+              })
+            }, false)
+          }
+
+          that._live.carousel.set(id, carousel)
+        }
+      },
+
+      /*
+      * Dropdown is just a toggle class
+      *
+      * */
+      dropdown: function (querySelector) {
+        let list
+
+        if (querySelector === undefined)
+          list = document.querySelectorAll('[data-ph-dropdown]')
+        else
+          list = document.querySelectorAll(querySelector)
+
+        for (let i = 0; i < list.length; i++) {
+          let item = list[i],
+            target
+
+          item.addEventListener('click', function (event) {
+            event.preventDefault()
+
+            target = item.getAttribute('data-ph-dropdown')
+
+            if (target !== null && target.length > 0)
+              that._core.toggle({
+                className: 'open',
+                element: document.querySelector(target)
+              })
+            else
+              that._core.toggle({
+                className: 'open',
+                element: item
+              })
+          })
+        }
+      },
+
+      /*
+      * Modal also is toggling a class on the modal target
+      *
+      * */
+      modal: function (querySelector) {
+        let list
+
+        if (querySelector === undefined)
+          list = document.querySelectorAll('[data-ph-dropdown]')
+        else
+          list = document.querySelectorAll(querySelector)
+
+        for (let i = 0; i < list.length; i++) {
+          let item = list[i],
+            target
+
+          item.addEventListener('click', function (event) {
+            event.preventDefault()
+
+            target = document.querySelector(item.getAttribute('data-ph-target'))
+
+            that._core.toggle({
+              className: 'open',
+              element: target
+            })
+          })
+        }
       }
     }
 
@@ -292,6 +683,53 @@ class Phantom  {
     this._export.register({
       name: 'tooltip',
       callback:  that._native.tooltip
+    })
+
+    /*
+    * Registering our carousel in _live
+    * Adding carousel to _core so it can run when page is loaded once
+    * Registering carousel to _export so we can have easy access to it
+    *
+    * */
+
+    this._live.register('carousel')
+    this._core.init.add({
+      name: 'carousel',
+      callback:  that._native.carousel
+    })
+    this._export.register({
+      name: 'carousel',
+      callback:  that._native.carousel
+    })
+
+    /*
+    * Adding dropdown to _core so it can run when page is loaded once
+    * Registering dropdown to _export so we can have easy access to it
+    *
+    * */
+
+    this._core.init.add({
+      name: 'dropdown',
+      callback:  that._native.dropdown
+    })
+    this._export.register({
+      name: 'dropdown',
+      callback:  that._native.dropdown
+    })
+
+    /*
+    * Adding modal to _core so it can run when page is loaded once
+    * Registering modal to _export so we can have easy access to it
+    *
+    * */
+
+    this._core.init.add({
+      name: 'modal',
+      callback:  that._native.modal
+    })
+    this._export.register({
+      name: 'modal',
+      callback:  that._native.modal
     })
 
     /*
