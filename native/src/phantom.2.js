@@ -43,6 +43,25 @@ let Phantom = function () {
 }
 
 /*
+* Building our live section to keep our live values
+*
+* */
+
+Phantom._live = {
+  getId: function () {
+    return this.counter++
+  },
+  counter: 0,
+  list: new Map(),
+  add: function (key, value) {
+    this.list.set(key, value)
+  },
+  remove: function (key) {
+    this.list.delete(key)
+  }
+}
+
+/*
 * Building a module section so we can import and export modules to our framework
 *
 * */
@@ -65,11 +84,14 @@ Phantom._module = {
 
 let ph = Phantom
 
+/*
+* To get element class list by array
+*
+* */
 ph._module.import({
   name: 'getClassArray',
   callback: function () {
-    let that = this,
-      classList = []
+    let classList = []
 
     this.forEach(function (value, index, array) {
       if (value.className.length > 0)
@@ -83,11 +105,14 @@ ph._module.import({
   }
 })
 
+/*
+* To add class to one element or multi elements, accepts single string or array of strings
+*
+* */
 ph._module.import({
   name: 'addClass',
   callback: function () {
-    let that = this,
-      list = []
+    let list = []
 
     switch (true) {
       case  arguments[0] instanceof Array:
@@ -113,11 +138,14 @@ ph._module.import({
   }
 })
 
+/*
+* To remove class from one element or multi elements, accepts single string or array of strings
+*
+* */
 ph._module.import({
   name: 'removeClass',
   callback: function () {
-    let that = this,
-      list = []
+    let list = []
 
     switch (true) {
       case  arguments[0] instanceof Array:
@@ -143,11 +171,14 @@ ph._module.import({
   }
 })
 
+/*
+* To toggle (add or remove) class on one element or multi elements, accepts single string or array of strings
+*
+* */
 ph._module.import({
   name: 'toggle',
   callback: function () {
-    let that = this,
-      list = []
+    let list = []
 
     switch (true) {
       case  arguments[0] instanceof Array:
@@ -170,5 +201,53 @@ ph._module.import({
           ph(value).addClass(value2)
       })
     })
+  }
+})
+
+
+/*
+* Tooltip
+*
+*   you can access it by adding following attribute [data-ph-tooltip] for the tooltip text and
+*   [data-ph-pos] = [top|bottom|right|left|undefined] for tooltip location
+*
+* */
+ph._module.import({
+  name: 'tooltip',
+  callback: function () {
+
+  }
+})
+
+/*
+* Carousel is function to manage some adding and removing class by timer
+*
+* */
+ph._module.import({
+  name: 'carousel',
+  callback: function () {
+
+  }
+})
+
+/*
+* Dropdown is just a toggle class
+*
+* */
+ph._module.import({
+  name: 'dropdown',
+  callback: function () {
+
+  }
+})
+
+/*
+* Modal also is toggling a class on the modal target
+*
+* */
+ph._module.import({
+  name: 'modal',
+  callback: function () {
+
   }
 })
