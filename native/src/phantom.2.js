@@ -606,6 +606,10 @@ ph._module.import({
   }
 })
 
+ph._engine.add('dropdown', function () {
+  ph('[data-ph-dropdown]').dropdown()
+})
+
 /*
 * Modal also is toggling a class on the modal target
 *
@@ -623,4 +627,8 @@ ph._module.import({
       })
     })
   }
+})
+
+ph._engine.add('modal', function () {
+  ph('[data-ph-modal]').modal()
 })
