@@ -182,6 +182,8 @@ ph._module.import({
 
       value.className = classList.join(' ')
     })
+
+    return this
   }
 })
 
@@ -215,6 +217,8 @@ ph._module.import({
 
       value.className = classList.join(' ')
     })
+
+    return this
   }
 })
 
@@ -248,6 +252,8 @@ ph._module.import({
           ph(value).addClass(value2)
       })
     })
+
+    return this
   }
 })
 
@@ -381,6 +387,8 @@ ph._module.import({
         ph._live.remove(id)
       }, false)
     })
+
+    return this
   }
 })
 
@@ -395,8 +403,183 @@ ph._engine.add('tooltip', function () {
 ph._module.import({
   name: 'carousel',
   callback: function () {
+    this.forEach(function (value, index, array) {
+      let timeInterval = value.getAttribute('data-ph-carousel'),
+        id = value.getAttribute('data-ph-id')
 
+      timeInterval = timeInterval ? parseInt(timeInterval) : 5000
+      id = id ? id : ph._live.getId()
+
+      if (!value.hasAttribute('data-ph-id'))
+        value.setAttribute('data-ph-id', id)
+
+      /*
+      * We build a carousel object here and store it in _live so we can have access to it later with full functionality
+      *
+      * */
+      let carousel = {
+        indicators: value.querySelectorAll('.carousel.indicator'),
+        slides: value.querySelectorAll('.carousel.slide'),
+        next: value.querySelector('.carousel.next'),
+        prev: value.querySelector('.carousel.prev'),
+        timeInterval,
+        timeout: null,
+        cleaner: function () {
+          clearInterval(carousel.timer)
+          clearTimeout(carousel.timeout)
+
+          for (let i = 0; i < carousel.slides.length; i++ )
+            if (carousel.slides[i].className.split(' ').indexOf('prev') > -1)
+              ph(carousel.slides[i]).removeClass('prev')
+            else
+              if (carousel.slides[i].className.split(' ').indexOf('next') > -1)
+                ph(carousel.slides[i]).removeClass('next')
+        },
+        switchWithIndicator: function ({ event, index, callback }) {
+          carousel.cleaner()
+
+          let activeIndex = 0
+
+          for (let i = 0; i < carousel.slides.length; i++) {
+            let classList = carousel.slides[i].className.split(' ')
+
+            if (classList.indexOf('active') > -1) {
+              activeIndex = i
+            }
+          }
+
+          ph(carousel.slides[activeIndex]).addClass('prev')
+          ph(carousel.slides[index]).addClass('next')
+
+          carousel.timeout = setTimeout(function () {
+            ph(carousel.slides[activeIndex]).removeClass(['prev', 'active'])
+            ph(carousel.slides[index]).removeClass('next').addClass('active')
+            ph(carousel.indicators[activeIndex]).removeClass('active')
+            ph(carousel.indicators[index]).addClass('active')
+
+            carousel.setTimer()
+
+            if (callback)
+              callback()
+          }, 1000)
+        },
+        nextSlide: function ({ callback } = {}) {
+          carousel.cleaner()
+
+          if (carousel.slides.length > 1) {
+            let index = 0,
+              next = 1
+
+            for (let i = 0; i < carousel.slides.length; i++) {
+              let classList = carousel.slides[i].className.split(' ')
+
+              if (classList.indexOf('active') > -1) {
+                index = i
+              }
+            }
+
+            if (index === carousel.slides.length - 1)
+              next = 0
+            else
+              next = index + 1
+
+            ph(carousel.slides[index]).addClass('prev')
+            ph(carousel.slides[next]).addClass('next')
+
+            carousel.timeout = setTimeout(function () {
+              ph(carousel.slides[index]).removeClass(['prev', 'active'])
+
+              ph(carousel.slides[next]).removeClass('next').addClass('active')
+
+              ph(carousel.indicators[index]).removeClass('active')
+              ph(carousel.indicators[next]).addClass('active')
+
+              carousel.setTimer()
+
+              if (callback)
+                callback()
+            }, 1000)
+          }
+        },
+        prevSlide: function ({ callback } = {}) {
+          carousel.cleaner()
+
+          if (carousel.slides.length > 1) {
+            let index = 0,
+              next = carousel.slides.length
+
+            for (let i = 0; i < carousel.slides.length; i++) {
+              let classList = carousel.slides[i].className.split(' ')
+
+              if (classList.indexOf('active') > -1) {
+                index = i
+              }
+            }
+
+            if (index === 0)
+              next = carousel.slides.length - 1
+            else
+              next = index - 1
+
+            ph(carousel.slides[index]).addClass('prev')
+            ph(carousel.slides[next]).addClass('next')
+
+            carousel.timeout = setTimeout(function () {
+              ph(carousel.slides[index]).removeClass(['prev', 'active'])
+              ph(carousel.slides[next]).removeClass('next').addClass('active')
+              ph(carousel.indicators[index]).removeClass('active')
+              ph(carousel.indicators[next]).addClass('active')
+
+              carousel.setTimer()
+
+              if (callback)
+                callback()
+            }, 1000)
+          }
+        },
+        id,
+        timer: null,
+        setTimer: function () {
+          carousel.timer = setInterval(function () {
+            carousel.nextSlide()
+          }, timeInterval)
+        }
+      }
+
+      carousel.setTimer()
+
+      carousel.next.addEventListener('click', function (event) {
+        event.preventDefault()
+
+        carousel.nextSlide()
+      })
+
+      carousel.prev.addEventListener('click', function (event) {
+        event.preventDefault()
+
+        carousel.prevSlide()
+      })
+
+      for (let i = 0; i < carousel.indicators.length; i++) {
+        carousel.indicators[i].addEventListener('click', function (event) {
+          let index = i
+
+          carousel.switchWithIndicator({
+            event,
+            index
+          })
+        }, false)
+      }
+
+      ph._live.add(id, carousel)
+    })
+
+    return this
   }
+})
+
+ph._engine.add('carousel', function () {
+  ph('[data-ph-carousel]').carousel()
 })
 
 /*
