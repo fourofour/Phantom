@@ -589,7 +589,20 @@ ph._engine.add('carousel', function () {
 ph._module.import({
   name: 'dropdown',
   callback: function () {
+    this.forEach(function (value, index, array) {
+      let target
 
+      value.addEventListener('click', function (event) {
+        event.preventDefault()
+
+        target = value.getAttribute('data-ph-dropdown')
+
+        if (target !== null && target.length > 0)
+          ph(target).toggle('open')
+        else
+          ph(value).toggle('open')
+      })
+    })
   }
 })
 
@@ -600,6 +613,14 @@ ph._module.import({
 ph._module.import({
   name: 'modal',
   callback: function () {
+    this.forEach(function (value, index, array) {
+      let target
 
+      value.addEventListener('click', function (event) {
+        event.preventDefault()
+
+        ph(value.getAttribute('data-ph-target')).toggle('open')
+      })
+    })
   }
 })
