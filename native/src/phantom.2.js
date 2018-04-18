@@ -42,6 +42,52 @@ let Phantom = function () {
   return phantom
 }
 
+let ph = Phantom
+
+/*
+* Setting is a global variables that we keep our setting of framework here
+*
+*
+* */
+
+Phantom._setting = {
+  log: false
+}
+
+
+/*
+* Engine is a section that we can add callbacks to it so it will gets called when DOMContentLoaded is fired
+*
+* */
+
+Phantom._engine = {
+  add: function (name, callback) {
+    this.list.set(name, callback)
+  },
+  remove: function (name) {
+    this.list.delete(name)
+  },
+  get: function (name) {
+    return this.list.get(name)
+  },
+  list: new Map(),
+  start: function () {
+    this.list.forEach(function (value, key, map) {
+      if (Phantom._setting.log)
+        console.log('initializing ' + key)
+
+      value()
+
+      if (Phantom._setting.log)
+        console.log('Finished' + key)
+    })
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  Phantom._engine.start()
+})
+
 /*
 * Building our live section to keep our live values
 *
@@ -58,6 +104,9 @@ Phantom._live = {
   },
   remove: function (key) {
     this.list.delete(key)
+  },
+  get: function (key) {
+    return this.list.get(key)
   }
 }
 
@@ -81,8 +130,6 @@ Phantom._module = {
   },
   list: new Map()
 }
-
-let ph = Phantom
 
 /*
 * To get element class list by array
@@ -204,6 +251,43 @@ ph._module.import({
   }
 })
 
+ph._module.import({
+  name: 'getViewportOffset',
+  callback: function () {
+    /*TODO: build an array on export in case received more than one element on the query*/
+    // this.forEach(function (value, index, array) {
+      let node = this[0]
+      let left = node.offsetLeft,
+        top = node.offsetTop
+
+      node = node.parentNode
+
+      do {
+        if (node.nodeName !== '#document') {
+          let styles = getComputedStyle(node)
+          let position = styles.getPropertyValue('position')
+
+          left -= node.scrollLeft
+          top -= node.scrollTop
+
+          if (/relative|absolute|fixed/.test(position)) {
+            left += parseInt(styles.getPropertyValue('border-left-width'), 10)
+            top += parseInt(styles.getPropertyValue('border-top-width'), 10)
+
+            left += node.offsetLeft
+            top += node.offsetTop
+          }
+
+          node = position === 'fixed' ? null : node.parentNode
+        } else {
+          node = null
+        }
+      } while (node)
+
+      return { left: left, top: top }
+    // })
+  }
+})
 
 /*
 * Tooltip
@@ -215,8 +299,93 @@ ph._module.import({
 ph._module.import({
   name: 'tooltip',
   callback: function () {
+    this.forEach(function (value, index, array) {
+      value.addEventListener('mouseover', function (event) {
+        let tooltip,
+          position,
+          element,
+          id,
+          height,
+          width,
+          location,
+          direction = value.getAttribute('data-ph-pos') ?  value.getAttribute('data-ph-pos') : 'top'
 
+
+        height = value.clientHeight
+        width = value.clientWidth
+
+        if (value.hasAttribute('data-ph-id'))
+          id = value.getAttribute('data-ph-id')
+        else {
+          id = ph._live.getId()
+
+          value.setAttribute('data-ph-id', id)
+        }
+
+        position = ph(value).getViewportOffset()
+
+        switch (direction) {
+          case 'left':
+            location = {
+              top: position.top + (height / 2) - 10 + 'px',
+              right: position.left + width + 7 + 'px'
+            }
+            break
+          case 'right':
+            location = {
+              top: position.top + (height / 2) - 10 + 'px',
+              left: position.left + width + 7 + 'px'
+            }
+            break
+          case 'bottom':
+            location = {
+              top: position.top + height + 7 + 'px',
+              left: position.left + (width / 2) + 'px'
+            }
+            break
+          default:
+            location = {
+              top: position.top - height - 10 + 'px',
+              left: position.left + (width / 2) + 'px'
+            }
+            break
+        }
+
+        tooltip = value.getAttribute('data-ph-tooltip')
+
+        element = document.createElement('div')
+        ph(element).addClass(['tooltip', direction])
+        element.appendChild(document.createTextNode(tooltip))
+
+        element.style.top = location.top
+
+        if (location.left)
+          element.style.left = location.left
+
+        if (location.right)
+          element.style.right = location.right
+
+        ph._live.add(id.toString(), element)
+
+        document.body.appendChild(element)
+      })
+
+      value.addEventListener('mouseleave', function(event) {
+        let id = event.target.getAttribute('data-ph-id'),
+          element
+
+        element = ph._live.get(id)
+
+        element.remove()
+
+        ph._live.remove(id)
+      }, false)
+    })
   }
+})
+
+ph._engine.add('tooltip', function () {
+  ph('[data-ph-tooltip]').tooltip()
 })
 
 /*
