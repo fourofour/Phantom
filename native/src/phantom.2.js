@@ -42,6 +42,52 @@ let Phantom = function () {
   return phantom
 }
 
+let ph = Phantom
+
+/*
+* Setting is a global variables that we keep our setting of framework here
+*
+*
+* */
+
+Phantom._setting = {
+  log: false
+}
+
+
+/*
+* Engine is a section that we can add callbacks to it so it will gets called when DOMContentLoaded is fired
+*
+* */
+
+Phantom._engine = {
+  add: function (name, callback) {
+    this.list.set(name, callback)
+  },
+  remove: function (name) {
+    this.list.delete(name)
+  },
+  get: function (name) {
+    return this.list.get(name)
+  },
+  list: new Map(),
+  start: function () {
+    this.list.forEach(function (value, key, map) {
+      if (Phantom._setting.log)
+        console.log('initializing ' + key)
+
+      value()
+
+      if (Phantom._setting.log)
+        console.log('Finished' + key)
+    })
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  Phantom._engine.start()
+})
+
 /*
 * Building our live section to keep our live values
 *
@@ -58,6 +104,9 @@ Phantom._live = {
   },
   remove: function (key) {
     this.list.delete(key)
+  },
+  get: function (key) {
+    return this.list.get(key)
   }
 }
 
@@ -81,8 +130,6 @@ Phantom._module = {
   },
   list: new Map()
 }
-
-let ph = Phantom
 
 /*
 * To get element class list by array
@@ -135,6 +182,8 @@ ph._module.import({
 
       value.className = classList.join(' ')
     })
+
+    return this
   }
 })
 
@@ -168,6 +217,8 @@ ph._module.import({
 
       value.className = classList.join(' ')
     })
+
+    return this
   }
 })
 
@@ -201,9 +252,48 @@ ph._module.import({
           ph(value).addClass(value2)
       })
     })
+
+    return this
   }
 })
 
+ph._module.import({
+  name: 'getViewportOffset',
+  callback: function () {
+    /*TODO: build an array on export in case received more than one element on the query*/
+    // this.forEach(function (value, index, array) {
+      let node = this[0]
+      let left = node.offsetLeft,
+        top = node.offsetTop
+
+      node = node.parentNode
+
+      do {
+        if (node.nodeName !== '#document') {
+          let styles = getComputedStyle(node)
+          let position = styles.getPropertyValue('position')
+
+          left -= node.scrollLeft
+          top -= node.scrollTop
+
+          if (/relative|absolute|fixed/.test(position)) {
+            left += parseInt(styles.getPropertyValue('border-left-width'), 10)
+            top += parseInt(styles.getPropertyValue('border-top-width'), 10)
+
+            left += node.offsetLeft
+            top += node.offsetTop
+          }
+
+          node = position === 'fixed' ? null : node.parentNode
+        } else {
+          node = null
+        }
+      } while (node)
+
+      return { left: left, top: top }
+    // })
+  }
+})
 
 /*
 * Tooltip
@@ -215,8 +305,95 @@ ph._module.import({
 ph._module.import({
   name: 'tooltip',
   callback: function () {
+    this.forEach(function (value, index, array) {
+      value.addEventListener('mouseover', function (event) {
+        let tooltip,
+          position,
+          element,
+          id,
+          height,
+          width,
+          location,
+          direction = value.getAttribute('data-ph-pos') ?  value.getAttribute('data-ph-pos') : 'top'
 
+
+        height = value.clientHeight
+        width = value.clientWidth
+
+        if (value.hasAttribute('data-ph-id'))
+          id = value.getAttribute('data-ph-id')
+        else {
+          id = ph._live.getId()
+
+          value.setAttribute('data-ph-id', id)
+        }
+
+        position = ph(value).getViewportOffset()
+
+        switch (direction) {
+          case 'left':
+            location = {
+              top: position.top + (height / 2) - 10 + 'px',
+              right: position.left + width + 7 + 'px'
+            }
+            break
+          case 'right':
+            location = {
+              top: position.top + (height / 2) - 10 + 'px',
+              left: position.left + width + 7 + 'px'
+            }
+            break
+          case 'bottom':
+            location = {
+              top: position.top + height + 7 + 'px',
+              left: position.left + (width / 2) + 'px'
+            }
+            break
+          default:
+            location = {
+              top: position.top - height - 10 + 'px',
+              left: position.left + (width / 2) + 'px'
+            }
+            break
+        }
+
+        tooltip = value.getAttribute('data-ph-tooltip')
+
+        element = document.createElement('div')
+        ph(element).addClass(['tooltip', direction])
+        element.appendChild(document.createTextNode(tooltip))
+
+        element.style.top = location.top
+
+        if (location.left)
+          element.style.left = location.left
+
+        if (location.right)
+          element.style.right = location.right
+
+        ph._live.add(id.toString(), element)
+
+        document.body.appendChild(element)
+      })
+
+      value.addEventListener('mouseleave', function(event) {
+        let id = event.target.getAttribute('data-ph-id'),
+          element
+
+        element = ph._live.get(id)
+
+        element.remove()
+
+        ph._live.remove(id)
+      }, false)
+    })
+
+    return this
   }
+})
+
+ph._engine.add('tooltip', function () {
+  ph('[data-ph-tooltip]').tooltip()
 })
 
 /*
@@ -226,8 +403,183 @@ ph._module.import({
 ph._module.import({
   name: 'carousel',
   callback: function () {
+    this.forEach(function (value, index, array) {
+      let timeInterval = value.getAttribute('data-ph-carousel'),
+        id = value.getAttribute('data-ph-id')
 
+      timeInterval = timeInterval ? parseInt(timeInterval) : 5000
+      id = id ? id : ph._live.getId()
+
+      if (!value.hasAttribute('data-ph-id'))
+        value.setAttribute('data-ph-id', id)
+
+      /*
+      * We build a carousel object here and store it in _live so we can have access to it later with full functionality
+      *
+      * */
+      let carousel = {
+        indicators: value.querySelectorAll('.carousel.indicator'),
+        slides: value.querySelectorAll('.carousel.slide'),
+        next: value.querySelector('.carousel.next'),
+        prev: value.querySelector('.carousel.prev'),
+        timeInterval,
+        timeout: null,
+        cleaner: function () {
+          clearInterval(carousel.timer)
+          clearTimeout(carousel.timeout)
+
+          for (let i = 0; i < carousel.slides.length; i++ )
+            if (carousel.slides[i].className.split(' ').indexOf('prev') > -1)
+              ph(carousel.slides[i]).removeClass('prev')
+            else
+              if (carousel.slides[i].className.split(' ').indexOf('next') > -1)
+                ph(carousel.slides[i]).removeClass('next')
+        },
+        switchWithIndicator: function ({ event, index, callback }) {
+          carousel.cleaner()
+
+          let activeIndex = 0
+
+          for (let i = 0; i < carousel.slides.length; i++) {
+            let classList = carousel.slides[i].className.split(' ')
+
+            if (classList.indexOf('active') > -1) {
+              activeIndex = i
+            }
+          }
+
+          ph(carousel.slides[activeIndex]).addClass('prev')
+          ph(carousel.slides[index]).addClass('next')
+
+          carousel.timeout = setTimeout(function () {
+            ph(carousel.slides[activeIndex]).removeClass(['prev', 'active'])
+            ph(carousel.slides[index]).removeClass('next').addClass('active')
+            ph(carousel.indicators[activeIndex]).removeClass('active')
+            ph(carousel.indicators[index]).addClass('active')
+
+            carousel.setTimer()
+
+            if (callback)
+              callback()
+          }, 1000)
+        },
+        nextSlide: function ({ callback } = {}) {
+          carousel.cleaner()
+
+          if (carousel.slides.length > 1) {
+            let index = 0,
+              next = 1
+
+            for (let i = 0; i < carousel.slides.length; i++) {
+              let classList = carousel.slides[i].className.split(' ')
+
+              if (classList.indexOf('active') > -1) {
+                index = i
+              }
+            }
+
+            if (index === carousel.slides.length - 1)
+              next = 0
+            else
+              next = index + 1
+
+            ph(carousel.slides[index]).addClass('prev')
+            ph(carousel.slides[next]).addClass('next')
+
+            carousel.timeout = setTimeout(function () {
+              ph(carousel.slides[index]).removeClass(['prev', 'active'])
+
+              ph(carousel.slides[next]).removeClass('next').addClass('active')
+
+              ph(carousel.indicators[index]).removeClass('active')
+              ph(carousel.indicators[next]).addClass('active')
+
+              carousel.setTimer()
+
+              if (callback)
+                callback()
+            }, 1000)
+          }
+        },
+        prevSlide: function ({ callback } = {}) {
+          carousel.cleaner()
+
+          if (carousel.slides.length > 1) {
+            let index = 0,
+              next = carousel.slides.length
+
+            for (let i = 0; i < carousel.slides.length; i++) {
+              let classList = carousel.slides[i].className.split(' ')
+
+              if (classList.indexOf('active') > -1) {
+                index = i
+              }
+            }
+
+            if (index === 0)
+              next = carousel.slides.length - 1
+            else
+              next = index - 1
+
+            ph(carousel.slides[index]).addClass('prev')
+            ph(carousel.slides[next]).addClass('next')
+
+            carousel.timeout = setTimeout(function () {
+              ph(carousel.slides[index]).removeClass(['prev', 'active'])
+              ph(carousel.slides[next]).removeClass('next').addClass('active')
+              ph(carousel.indicators[index]).removeClass('active')
+              ph(carousel.indicators[next]).addClass('active')
+
+              carousel.setTimer()
+
+              if (callback)
+                callback()
+            }, 1000)
+          }
+        },
+        id,
+        timer: null,
+        setTimer: function () {
+          carousel.timer = setInterval(function () {
+            carousel.nextSlide()
+          }, timeInterval)
+        }
+      }
+
+      carousel.setTimer()
+
+      carousel.next.addEventListener('click', function (event) {
+        event.preventDefault()
+
+        carousel.nextSlide()
+      })
+
+      carousel.prev.addEventListener('click', function (event) {
+        event.preventDefault()
+
+        carousel.prevSlide()
+      })
+
+      for (let i = 0; i < carousel.indicators.length; i++) {
+        carousel.indicators[i].addEventListener('click', function (event) {
+          let index = i
+
+          carousel.switchWithIndicator({
+            event,
+            index
+          })
+        }, false)
+      }
+
+      ph._live.add(id, carousel)
+    })
+
+    return this
   }
+})
+
+ph._engine.add('carousel', function () {
+  ph('[data-ph-carousel]').carousel()
 })
 
 /*
@@ -237,8 +589,25 @@ ph._module.import({
 ph._module.import({
   name: 'dropdown',
   callback: function () {
+    this.forEach(function (value, index, array) {
+      let target
 
+      value.addEventListener('click', function (event) {
+        event.preventDefault()
+
+        target = value.getAttribute('data-ph-dropdown')
+
+        if (target !== null && target.length > 0)
+          ph(target).toggle('open')
+        else
+          ph(value).toggle('open')
+      })
+    })
   }
+})
+
+ph._engine.add('dropdown', function () {
+  ph('[data-ph-dropdown]').dropdown()
 })
 
 /*
@@ -248,6 +617,18 @@ ph._module.import({
 ph._module.import({
   name: 'modal',
   callback: function () {
+    this.forEach(function (value, index, array) {
+      let target
 
+      value.addEventListener('click', function (event) {
+        event.preventDefault()
+
+        ph(value.getAttribute('data-ph-target')).toggle('open')
+      })
+    })
   }
+})
+
+ph._engine.add('modal', function () {
+  ph('[data-ph-modal]').modal()
 })
