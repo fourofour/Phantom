@@ -18,8 +18,8 @@ let Phantom = function () {
       })
       break
     // If argument is NodeList
-    case arguments[0] instanceof NodeList:
-      for (let i = 0; i < arguments[0]; i++)
+    case arguments[0] instanceof NodeList || arguments[0] instanceof HTMLCollection:
+      for (let i = 0; i < arguments[0].length; i++)
         phantom.push(arguments[0][i])
       break
     // Default is querySelector
