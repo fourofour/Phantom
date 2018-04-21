@@ -36,7 +36,10 @@ let Phantom = function () {
   *
   * */
   Phantom._module.list.forEach(function (value, key, map) {
-    phantom[key] = value.bind(phantom)
+    if ( phantom[key] !== undefined )
+      console.log(key + ' is already taken')
+    else
+      phantom[key] = value.bind(phantom)
   })
 
   return phantom
