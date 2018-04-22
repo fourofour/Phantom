@@ -17,7 +17,7 @@ let Phantom = function () {
         phantom.push(value)
       })
       break
-    // If argument is NodeList
+    // If argument is NodeList or HTMLCollection
     case arguments[0] instanceof NodeList || arguments[0] instanceof HTMLCollection:
       for (let i = 0; i < arguments[0].length; i++)
         phantom.push(arguments[0][i])
@@ -651,7 +651,9 @@ ph._module.import({
   callback: function ({} = {}) {
     /*TODO: build a full slider*/
     this.forEach(function (value, index, array) {
-      let id = value.getAttribute('data-ph-id') ? value.getAttribute('data-ph-id') : ph._live.getId()
+      let id = value.getAttribute('data-ph-id')
+
+      id = id ? id : ph._live.getId()
 
       let slider = {
         target: value,

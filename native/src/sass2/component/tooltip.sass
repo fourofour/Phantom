@@ -1,0 +1,67 @@
+$tooltip-base-padding: 1px 7px 3px 7px !default
+
+$tooltip-background-color: rgba(0, 0, 0, 1) !default
+
+$tooltip-border-radius: 5px !default
+
+$tooltip-position: fixed !default
+
+$tooltip-text-color: #fff !default
+
+.tooltip
+  padding: $tooltip-base-padding
+  background:
+    color: $tooltip-background-color
+  border:
+    radius: $tooltip-border-radius
+  position: $tooltip-position
+  color: $tooltip-text-color
+  font:
+    size: 13px
+
+  &:after
+    content: ''
+    display: block
+    position: absolute
+    text:
+      align: center
+    border:
+      width: 0 3px 3px 0
+      color: black
+      style: solid
+    padding: 3px
+
+  &.top:after
+    transform: rotate(45deg)
+    -webkit-transform: rotate(45deg)
+    bottom: -2px
+    right: 50%
+    margin:
+      right: -4px
+
+  &.bottom:after
+    transform: rotate(-135deg)
+    -webkit-transform: rotate(-135deg)
+    top: -2px
+    right: 50%
+    margin:
+      right: -4px
+
+  &.left:after
+    transform: rotate(-45deg)
+    -webkit-transform: rotate(-45deg)
+    top: 50%
+    right: 0
+    margin:
+      top: -5px
+      right: -2px
+
+  &.right:after
+    transform: rotate(135deg)
+    -webkit-transform: rotate(135deg)
+    top: 50%
+    left: 0
+    margin:
+      top: -5px
+      left: -2px
+
